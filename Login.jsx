@@ -1,28 +1,33 @@
-import React, {useState} from 'react'
+import { useState } from 'react'
+import { supabase } from './supabaseClient'
 
-export default function Login({supabase}){
+export default function Login() {
   const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState(null)
 
-  const signIn = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    const { error } = await supabase.auth.signInWithOtp({email})
-    if (error) alert(error.message)
-    else alert('E-Mail zum Login wurde gesendet (Magic Link).')
-    setLoading(false)
+  const handleLogin = async () => {
+    const { user, error } = await supabase.auth.signIn({ email, password })
+    if (error) setError(error.message)
   }
 
   return (
-    <div style={{maxWidth:420, margin:'40px auto'}}>
+    <div>
       <h2>Login</h2>
-      <form onSubmit={signIn}>
-        <label>Email</label><br/>
-        <input value={email} onChange={e=>setEmail(e.target.value)} type="email" required style={{width:'100%',padding:8,marginTop:6}}/>
-        <div style={{marginTop:12}}>
-          <button className="button" disabled={loading}>{loading? 'Sende...':'Login / Magic Link'}</button>
-        </div>
-      </form>
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+      />
+      <input
+        type="password"
+        placeholder="Passwort"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+      />
+      <button onClick={handleLogin}>Login</button>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   )
 }

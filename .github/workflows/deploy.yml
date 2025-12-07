@@ -23,7 +23,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
-# trigger 
-# TRIGGER 123
-# FORCE-TRIGGER-001
-# FORCE TRIGGER 2025

@@ -1,70 +1,36 @@
-import React, { useState, useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { supabase } from "./supabaseClient";
+import { useEffect, useState } from 'react'
+import { supabase } from './supabaseClient'
+import Login from './Login'
+import Dashboard from './Dashboard'
 
-function ProtectedRoute({ isLoggedIn, children }) {
-  return isLoggedIn ? children : <Navigate to="/login" />;
-}
+function ProtectedRoute({ children }) {
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-function Login({ onLogin }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  useEffect(() => {
+    const session = supabase.auth.session()
+    setUser(session?.user ?? null)
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) alert(error.message);
-    else onLogin(data.user);
-  };
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
 
-  return (
-    <div style={{ padding: "2rem" }}>
-      <h2>Login</h2>
-      <form onSubmit={handleLogin}>
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-        <br />
-        <input type="password" placeholder="Passwort" value={password} onChange={e => setPassword(e.target.value)} />
-        <br />
-        <button type="submit">Login</button>
-      </form>
-    </div>
-  );
-}
+    setLoading(false)
 
-function Dashboard({ onLogout }) {
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    onLogout();
-  };
+    return () => listener?.unsubscribe()
+  }, [])
 
-  return (
-    <div>
-      <h2>Willkommen im Dashboard!</h2>
-      <button onClick={handleLogout}>Logout</button>
-    </div>
-  );
+  if (loading) return <div>Lädt...</div>
+  if (!user) return <Login />
+
+  return children
 }
 
 export default function App() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setUser(data.session.user);
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user || null));
-
-    return () => listener.subscription.unsubscribe();
-  }, []);
-
   return (
-    <Routes>
-      <Route path="/login" element={<Login onLogin={u => setUser(u)} />} />
-      <Route path="/*" element={<ProtectedRoute isLoggedIn={!!user}><Dashboard onLogout={() => setUser(null)} /></ProtectedRoute>} />
-    </Routes>
-  );
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  )
 }
