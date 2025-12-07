@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 
+// ProtectedRoute
 function ProtectedRoute({ isLoggedIn, children }) {
   return isLoggedIn ? children : <Navigate to="/login" />;
 }
 
+// Login
 function Login({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,6 +46,7 @@ function Login({ onLogin }) {
   );
 }
 
+// Dashboard
 function Dashboard({ onLogout }) {
   const handleLogout = async () => {
     await supabase.auth.signOut();
