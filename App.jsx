@@ -1,25 +1,46 @@
-import React, {useEffect, useState} from 'react'
-import { createClient } from '@supabase/supabase-js'
-import Dashboard from './views/Dashboard'
-import Login from './views/Login'
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "./supabaseClient";
 
-// Replace these values in .env before building / deploy
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON
+import Login from "./Login";
+import Dashboard from "./Dashboard";
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON)
+function ProtectedRoute({ children }) {
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-export default function App(){
-  const [session, setSession] = useState(null)
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data?.user ?? null);
+      setLoading(false);
+    });
+  }, []);
 
-  useEffect(()=>{
-    supabase.auth.getSession().then(({data})=> setSession(data.session))
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-    return ()=> listener.subscription.unsubscribe()
-  },[])
+  if (loading) return <div>Lade...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
 
-  if(!session) return <Login supabase={supabase} />
-  return <Dashboard supabase={supabase} session={session} />
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        {/* LOGIN */}
+        <Route path="/login" element={<Login />} />
+
+        {/* GESCHÜTZTES DASHBOARD */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* STANDARD: IMMER ZUM LOGIN */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </Router>
+  );
 }
