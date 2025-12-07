@@ -1,29 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { supabase } from "./supabaseClient";
 
-// Login-Komponente
+function ProtectedRoute({ isLoggedIn, children }) {
+  return isLoggedIn ? children : <Navigate to="/login" />;
+}
+
 function Login({ onLogin }) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Dummy Login: admin / 123
-    if (username === "admin" && password === "123") {
-      onLogin(); // Login erfolgreich
-    } else {
-      alert("Falsche Zugangsdaten!");
-    }
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) alert(error.message);
+    else onLogin(data.user);
   };
 
   return (
     <div style={{ padding: "2rem" }}>
       <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleLogin}>
         <input
-          placeholder="Benutzername"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
         <br />
         <input
@@ -39,48 +44,47 @@ function Login({ onLogin }) {
   );
 }
 
-// Dashboard-Komponente
 function Dashboard({ onLogout }) {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    onLogout();
+  };
+
   return (
     <div>
       <h2>Willkommen im Dashboard!</h2>
-      <button onClick={onLogout}>Logout</button>
+      <button onClick={handleLogout}>Logout</button>
     </div>
   );
 }
 
-// ProtectedRoute
-function ProtectedRoute({ isLoggedIn, children }) {
-  return isLoggedIn ? children : <Navigate to="/login" />;
-}
-
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
 
-  // Prüfen, ob LocalStorage Login gespeichert ist
   useEffect(() => {
-    const storedLogin = localStorage.getItem("isLoggedIn") === "true";
-    setIsLoggedIn(storedLogin);
+    // Prüfen, ob Nutzer eingeloggt
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setUser(data.session.user);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => setUser(session?.user || null)
+    );
+
+    return () => listener.subscription.unsubscribe();
   }, []);
-
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    localStorage.setItem("isLoggedIn", "true");
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    localStorage.removeItem("isLoggedIn");
-  };
 
   return (
     <Routes>
-      <Route path="/login" element={<Login onLogin={handleLogin} />} />
+      <Route
+        path="/login"
+        element={<Login onLogin={(u) => setUser(u)} />}
+      />
       <Route
         path="/*"
         element={
-          <ProtectedRoute isLoggedIn={isLoggedIn}>
-            <Dashboard onLogout={handleLogout} />
+          <ProtectedRoute isLoggedIn={!!user}>
+            <Dashboard onLogout={() => setUser(null)} />
           </ProtectedRoute>
         }
       />
