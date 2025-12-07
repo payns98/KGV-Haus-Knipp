@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-// Beispiel: Einfache Login-Komponente
+// Login-Komponente
 function Login({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Einfaches Dummy-Login
     if (username === "admin" && password === "123") {
       onLogin(true);
     } else {
@@ -39,7 +38,7 @@ function Login({ onLogin }) {
   );
 }
 
-// Beispiel-Dashboard
+// Dashboard
 function Dashboard() {
   return <h2>Willkommen im Dashboard!</h2>;
 }
