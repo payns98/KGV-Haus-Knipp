@@ -1,8 +1,7 @@
-// vite.config.js
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: "/KGV-Haus-Knipp/" // <-- genau so, wie dein Repo-Name auf GitHub
+  base: '/KGV-Haus-Knipp/',  // Name deines GitHub Repos
 })
