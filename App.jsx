@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 // Login-Komponente
@@ -8,8 +8,9 @@ function Login({ onLogin }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Dummy Login: admin / 123
     if (username === "admin" && password === "123") {
-      onLogin(true);
+      onLogin(); // Login erfolgreich
     } else {
       alert("Falsche Zugangsdaten!");
     }
@@ -38,9 +39,14 @@ function Login({ onLogin }) {
   );
 }
 
-// Dashboard
-function Dashboard() {
-  return <h2>Willkommen im Dashboard!</h2>;
+// Dashboard-Komponente
+function Dashboard({ onLogout }) {
+  return (
+    <div>
+      <h2>Willkommen im Dashboard!</h2>
+      <button onClick={onLogout}>Logout</button>
+    </div>
+  );
 }
 
 // ProtectedRoute
@@ -51,14 +57,30 @@ function ProtectedRoute({ isLoggedIn, children }) {
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Prüfen, ob LocalStorage Login gespeichert ist
+  useEffect(() => {
+    const storedLogin = localStorage.getItem("isLoggedIn") === "true";
+    setIsLoggedIn(storedLogin);
+  }, []);
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    localStorage.setItem("isLoggedIn", "true");
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem("isLoggedIn");
+  };
+
   return (
     <Routes>
-      <Route path="/login" element={<Login onLogin={setIsLoggedIn} />} />
+      <Route path="/login" element={<Login onLogin={handleLogin} />} />
       <Route
         path="/*"
         element={
           <ProtectedRoute isLoggedIn={isLoggedIn}>
-            <Dashboard />
+            <Dashboard onLogout={handleLogout} />
           </ProtectedRoute>
         }
       />
