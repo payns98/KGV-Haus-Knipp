@@ -1,46 +1,68 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "./supabaseClient";
+import React, { useState } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-import Login from "./Login";
-import Dashboard from "./Dashboard";
+// Beispiel: Einfache Login-Komponente
+function Login({ onLogin }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-function ProtectedRoute({ children }) {
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Einfaches Dummy-Login
+    if (username === "admin" && password === "123") {
+      onLogin(true);
+    } else {
+      alert("Falsche Zugangsdaten!");
+    }
+  };
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data?.user ?? null);
-      setLoading(false);
-    });
-  }, []);
+  return (
+    <div style={{ padding: "2rem" }}>
+      <h2>Login</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          placeholder="Benutzername"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <br />
+        <input
+          type="password"
+          placeholder="Passwort"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <br />
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  );
+}
 
-  if (loading) return <div>Lade...</div>;
-  if (!user) return <Navigate to="/login" replace />;
-  return children;
+// Beispiel-Dashboard
+function Dashboard() {
+  return <h2>Willkommen im Dashboard!</h2>;
+}
+
+// ProtectedRoute
+function ProtectedRoute({ isLoggedIn, children }) {
+  return isLoggedIn ? children : <Navigate to="/login" />;
 }
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   return (
-    <Router>
-      <Routes>
-        {/* LOGIN */}
-        <Route path="/login" element={<Login />} />
-
-        {/* GESCHÜTZTES DASHBOARD */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* STANDARD: IMMER ZUM LOGIN */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/login" element={<Login onLogin={setIsLoggedIn} />} />
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute isLoggedIn={isLoggedIn}>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   );
 }
